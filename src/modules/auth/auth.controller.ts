@@ -10,7 +10,7 @@ export const authWithFortify = async (req: Request, res: Response) => {
 
 export const codeVerification = async (req: Request, res: Response) => {
     const code = req.query.code as string;
-    const idToken = await authService.codeVerification(code);
-    console.log(idToken)
+    const {decodedIDToken, accessToken} = await authService.codeVerification(code);
+    res.cookie("accessToken", accessToken)
     res.redirect("http://localhost:8000/");
 };

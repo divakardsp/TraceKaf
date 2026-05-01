@@ -35,7 +35,10 @@ export const verifyIDToken = (token: string) => {
     });
 };
 
-interface PayloadAccessToken {}
+interface PayloadAccessToken {
+    name:string,
+    email:string,
+}
 export const generateAccessToken = (payloadAccessToken: PayloadAccessToken) => {
     const token = jwt.sign(
         payloadAccessToken,
@@ -44,6 +47,8 @@ export const generateAccessToken = (payloadAccessToken: PayloadAccessToken) => {
             expiresIn: Number(process.env.ACCESS_TOKEN_EXPIRES_IN) || "1d",
         },
     );
+
+    return token;
 };
 
 export const verifyAccessToken = (token: string) => {

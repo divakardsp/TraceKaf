@@ -1,16 +1,29 @@
 import express from "express";
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import path from "node:path";
+
+import { Server } from "socket.io";
+
 
 import fortifyRoutes from "./modules/auth/auth.routes.js"
 
 const app: Express = express();
 
+export const io = new Server()
+
+io.on("connection", (socket) => {
+  console.log(`Socket Connected [${socket.id}]`)
+
+  socket.on("client:location-update", (data) => {
+    console.log(`Location Update |${socket.id}| lat:${data.latitude} | long:${data.longitude}`)
+  })
+})
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(path.resolve("../public")));
 
 app.use("/auth", fortifyRoutes)
 
@@ -65,5 +78,10 @@ app.get("/", (req, res) => {
     </html>
   `);
 });
+
+app.get("/live-location", (req: Request, res :Response) => {
+  const filePath = path.resolve(process.cwd(), "public", "index.html")
+  return res.sendFile(filePath);
+})
 
 export { app };

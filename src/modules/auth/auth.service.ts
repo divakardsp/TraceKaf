@@ -1,6 +1,10 @@
 import { ApiError } from "../../utils/apiError.js";
-import { verifyIDToken } from "../../utils/jwt.js";
+import { generateAccessToken, verifyIDToken } from "../../utils/jwt.js";
 
+interface DecodedIDToken{
+    name: string,
+    email: string,
+}
 export const authWithFortify = async () => {
     const fortifyRoutes = await fetch(
         "http://localhost:5473/.well-known/openid-configuration",
@@ -45,8 +49,13 @@ export const codeVerification = async (code: string) => {
 
 
     // @ts-ignore
-    const  decodedIDToken = verifyIDToken(idTokenData.data.idToken);
+    const  decodedIDToken = verifyIDToken(idTokenData.data.idToken) as DecodedIDToken
+
+    const accessToken = generateAccessToken({
+        name: decodedIDToken.name,
+        email: decodedIDToken.email,
+    })
     
 
-    return decodedIDToken;
+    return {decodedIDToken, accessToken};
 };
