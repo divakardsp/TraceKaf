@@ -1,87 +1,62 @@
 import express from "express";
 import type { Express, Request, Response } from "express";
 import cookieParser from "cookie-parser";
-import path from "node:path";
+import path from "path";
+
 
 import { Server } from "socket.io";
 
+import fortifyRoutes from "./modules/auth/auth.routes.js";
+import locationRoutes from "./modules/location-tracker/location.routes.js";
+import { kafkaClient } from "./common/utils/kafkaClient.js";
+import { socketMiddleware } from "./common/middleware/socketAuth.middleware.js";
+import { onConnection } from "./modules/socket/onConnection.js";
 
-import fortifyRoutes from "./modules/auth/auth.routes.js"
 
 const app: Express = express();
 
-export const io = new Server()
+export const io = new Server();
 
-io.on("connection", (socket) => {
-  console.log(`Socket Connected [${socket.id}]`)
+export const kafkaProducer = kafkaClient.producer();
 
-  socket.on("client:location-update", (data) => {
-    console.log(`Location Update |${socket.id}| lat:${data.latitude} | long:${data.longitude}`)
-  })
-})
+await kafkaProducer.connect();
 
+const kafkaConsumer = kafkaClient.consumer({ groupId: `socket-server` });
+
+await kafkaConsumer.connect();
+await kafkaConsumer.subscribe({
+    topics: ["location-updates"],
+    fromBeginning: true,
+});
+
+kafkaConsumer.run({
+    //@ts-ignore
+    eachMessage: async ({ topic, partition, message }) => {
+        //@ts-ignore
+        const data = JSON.parse(message.value.toString());
+        io.emit("server:location-updates", {
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            latitude: data.lat,
+            longitude: data.lon,
+        });
+
+        console.log(`KafkaConsumer Data Received`, { data });
+    },
+});
+io.use((socket, next)=> socketMiddleware(socket,next))
+io.on("connection", onConnection);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser())
 
-app.use("/auth", fortifyRoutes)
 
-app.get("/", (req, res) => {
-    res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Authentication Success</title>
-      <style>
-        body {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-          margin: 0;
-          font-family: Arial, sans-serif;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .container {
-          text-align: center;
-          background: white;
-          padding: 40px;
-          border-radius: 10px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-        h1 {
-          color: #333;
-          margin: 0 0 20px 0;
-        }
-        p {
-          color: #666;
-          margin: 0;
-          font-size: 16px;
-        }
-        .success-icon {
-          font-size: 50px;
-          color: #28a745;
-          margin-bottom: 20px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="success-icon">✓</div>
-        <h1>Authentication Successful</h1>
-        <p>You have successfully authenticated by Fortify</p>
-      </div>
-    </body>
-    </html>
-  `);
-});
+app.use("/", fortifyRoutes);
+app.use("/auth",fortifyRoutes)
 
-app.get("/live-location", (req: Request, res :Response) => {
-  const filePath = path.resolve(process.cwd(), "public", "index.html")
-  return res.sendFile(filePath);
-})
+
+app.use("/live-location", locationRoutes);
 
 export { app };

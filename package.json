@@ -20,11 +20,13 @@
   },
   "homepage": "https://github.com/divakardsp/TraceKaf#readme",
   "dependencies": {
+    "@types/cookie": "^1.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/kafkajs": "^1.9.0",
     "@types/socket.io": "^3.0.2",
+    "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

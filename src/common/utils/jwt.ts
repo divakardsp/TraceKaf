@@ -11,6 +11,7 @@ type RsaJwk = {
     use?: string,
 };
 
+
 const getFortifyPublicKey = () => {
     console.log(process.env.FORTIFY_JWK)
     const jwkRaw = process.env.FORTIFY_JWK ;

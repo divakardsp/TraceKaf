@@ -1,9 +1,9 @@
-import { ApiError } from "../../utils/apiError.js";
-import { generateAccessToken, verifyIDToken } from "../../utils/jwt.js";
+import { ApiError } from "../../common/utils/apiError.js";
+import { generateAccessToken, verifyIDToken } from "../../common/utils/jwt.js";
 
-interface DecodedIDToken{
-    name: string,
-    email: string,
+interface DecodedIDToken {
+    name: string;
+    email: string;
 }
 export const authWithFortify = async () => {
     const fortifyRoutes = await fetch(
@@ -47,15 +47,15 @@ export const codeVerification = async (code: string) => {
     });
     const idTokenData = await idToken.json();
 
-
-    // @ts-ignore
-    const  decodedIDToken = verifyIDToken(idTokenData.data.idToken) as DecodedIDToken
+    const decodedIDToken = verifyIDToken(
+        // @ts-ignore
+        idTokenData.data.idToken,
+    ) as DecodedIDToken;
 
     const accessToken = generateAccessToken({
         name: decodedIDToken.name,
         email: decodedIDToken.email,
-    })
-    
+    });
 
-    return {decodedIDToken, accessToken};
+    return { decodedIDToken, accessToken };
 };

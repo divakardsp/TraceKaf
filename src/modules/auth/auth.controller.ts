@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import * as authService from "./auth.service.js";
-import { ApiResponse } from "../../utils/apiResponse.js";
+
 
 export const authWithFortify = async (req: Request, res: Response) => {
     const fortifyRedirectURL = await authService.authWithFortify();
@@ -10,7 +10,8 @@ export const authWithFortify = async (req: Request, res: Response) => {
 
 export const codeVerification = async (req: Request, res: Response) => {
     const code = req.query.code as string;
-    const {decodedIDToken, accessToken} = await authService.codeVerification(code);
-    res.cookie("accessToken", accessToken)
-    res.redirect("http://localhost:8000/");
+    const { decodedIDToken, accessToken } =
+        await authService.codeVerification(code);
+    res.cookie("accessToken", accessToken);
+    res.redirect("http://localhost:8000/live-location");
 };
